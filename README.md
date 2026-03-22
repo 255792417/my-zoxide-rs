@@ -19,12 +19,25 @@ A simple implementation of [zoxide](https://github.com/ajeetdsouza/zoxide)
     ```
     this will show a guide built with [clap](https://github.com/clap-rs/clap)
 
-4. Integrated with your shell  
-    Add this command to your fish config(~/.config/fish/config.fish if you use linux)  
-    ```bash
+4. Integrate with your shell
+    Add the init command for your shell to the corresponding shell config file.
+
+    **Fish** (`~/.config/fish/config.fish` on Linux):
+    ```fish
     my-zoxide init fish | source
     ```
-    fish is the only supported shell currently
+
+    **Bash** (`~/.bashrc`):
+    ```bash
+    eval "$(my-zoxide init bash)"
+    ```
+
+    **Zsh** (`~/.zshrc`):
+    ```zsh
+    eval "$(my-zoxide init zsh)"
+    ```
+
+    After reloading your shell config, you can use `my-z` for interactive directory jumping, and visited directories will be recorded automatically.
 
 ### How to uninstall  
 just run these commands in your shell
