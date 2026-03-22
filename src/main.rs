@@ -102,6 +102,7 @@ fn main() -> Result<()> {
 
         Commands::Check => {
             engine.check_db_entries();
+            engine.save_db()?;
         }
     }
 
