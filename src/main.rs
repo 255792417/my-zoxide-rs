@@ -24,6 +24,9 @@ enum Commands {
 
     #[command(about = "Delete a directory entry")]
     Delete { path: String },
+
+    #[command(about = "Clear all directory entries")]
+    Clear,
 }
 
 fn main() -> Result<()> {
@@ -63,6 +66,10 @@ fn main() -> Result<()> {
 
             db.delete_entry(&abs_path);
             db.save()?;
+        }
+
+        Commands::Clear => {
+            db.clear()?;
         }
     }
 

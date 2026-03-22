@@ -20,13 +20,17 @@ pub struct Database {
 }
 
 impl Database {
-    fn get_db_path() -> Result<PathBuf> {
+    fn get_home_dir() -> Result<PathBuf> {
         let home = ProjectDirs::from("", "", "my-zoxide")
             .context("Could not find HOME environment variable")?;
-        let path = home.data_local_dir();
+        Ok(home.data_local_dir().to_path_buf())
+    }
+
+    fn get_db_path() -> Result<PathBuf> {
+        let path = Self::get_home_dir()?;
 
         if !path.exists() {
-            fs::create_dir_all(path).context("Failed to create database directory")?;
+            fs::create_dir_all(path.clone()).context("Failed to create database directory")?;
         }
 
         Ok(path.join("db.json"))
@@ -49,6 +53,18 @@ impl Database {
 
         let json = serde_json::to_string_pretty(self).context("Failed to serialize database")?;
         fs::write(&path, json).context("Failed to write database")?;
+
+        Ok(())
+    }
+
+    pub fn clear(&mut self) -> Result<()> {
+        self.entries.clear();
+
+        let home = Self::get_home_dir().expect("Failed to get home directory");
+
+        if home.exists() {
+            fs::remove_dir_all(home).context("Failed to clear database")?;
+        }
 
         Ok(())
     }
