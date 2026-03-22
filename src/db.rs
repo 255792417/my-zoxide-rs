@@ -1,20 +1,20 @@
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use directories::ProjectDirs;
+use serde::{Deserialize, Serialize};
 
 use crate::{engine::calculate_score, get_now_time};
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DirRecord {
     pub score: f64,
     pub last_accessed: u64,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Database {
     pub entries: HashMap<String, DirRecord>,
 }
@@ -33,15 +33,15 @@ impl Database {
             fs::create_dir_all(path.clone()).context("Failed to create database directory")?;
         }
 
-        Ok(path.join("db.json"))
+        Ok(path.join("db.bin"))
     }
 
     pub fn load() -> Result<Self> {
         let path = Self::get_db_path()?;
 
         if path.exists() {
-            let json = fs::read_to_string(&path).context("Failed to read database")?;
-            let db = serde_json::from_str(&json).unwrap_or_default();
+            let bytes = fs::read(&path).context("Failed to read database")?;
+            let db = bincode::deserialize::<Self>(&bytes).unwrap_or_default();
             Ok(db)
         } else {
             Ok(Database::default())
@@ -51,8 +51,8 @@ impl Database {
     pub fn save(&self) -> Result<()> {
         let path = Self::get_db_path()?;
 
-        let json = serde_json::to_string_pretty(self).context("Failed to serialize database")?;
-        fs::write(&path, json).context("Failed to write database")?;
+        let bytes = bincode::serialize(self).context("Failed to serialize database")?;
+        fs::write(&path, bytes).context("Failed to write database")?;
 
         Ok(())
     }

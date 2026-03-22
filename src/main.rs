@@ -20,7 +20,11 @@ enum Commands {
     Query { keywords: Vec<String> },
 
     #[command(about = "List all tracked directories")]
-    List { keywords: Vec<String> },
+    List {
+        keywords: Vec<String>,
+        #[arg(short, long, default_value_t = false, help = "Show scores in the list")]
+        score: bool,
+    },
 
     #[command(about = "Delete a directory entry")]
     Delete { path: String },
@@ -53,11 +57,15 @@ fn main() -> Result<()> {
             }
         }
 
-        Commands::List { keywords } => {
+        Commands::List { keywords, score } => {
             let matches: Vec<(String, f64)> = db.get_matching_entries(keywords);
 
-            for (path, score) in matches {
-                println!("{} (score: {:.2})", path, score);
+            for (path, path_score) in matches {
+                if *score {
+                    println!("{} (score: {:.2})", path, path_score);
+                } else {
+                    println!("{}", path);
+                }
             }
         }
 
