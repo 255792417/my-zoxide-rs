@@ -1,5 +1,5 @@
 use crate::db::DirRecord;
-use fuzzy_matcher::{FuzzyMatcher, skim::SkimMatcherV2};
+use fuzzy_matcher::FuzzyMatcher;
 use std::path;
 
 fn frecency_score(record: &DirRecord) -> f64 {
@@ -10,15 +10,19 @@ fn frecency_score(record: &DirRecord) -> f64 {
     record.score / (1.0 + time_elapsed_hours).sqrt()
 }
 
-pub fn calculate_score(path: &str, record: &DirRecord, keyword: &str) -> Option<f64> {
-    let path_str = path.to_lowercase();
-    let last_segment = path_str.split(path::MAIN_SEPARATOR).last().unwrap_or(&"");
+pub fn calculate_score(
+    matcher: &impl FuzzyMatcher,
+    path: &str,
+    record: &DirRecord,
+    keyword: &str,
+) -> Option<f64> {
+    let last_segment = path.split(path::MAIN_SEPARATOR).last().unwrap_or(&"");
 
-    let matcher = SkimMatcherV2::default();
-
-    let mut score: f64 = matcher
-        .fuzzy_match(last_segment, keyword)?
-        .max(matcher.fuzzy_match(&path_str, keyword)?) as f64;
+    let mut score: f64 = matcher.fuzzy_match(path, keyword)? as f64;
+    score += matcher
+        .fuzzy_match(last_segment, keyword)
+        .unwrap_or_else(|| 0) as f64
+        * 1.5;
 
     let frecency = frecency_score(record);
     score *= frecency;

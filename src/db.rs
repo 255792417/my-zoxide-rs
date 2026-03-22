@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use directories::ProjectDirs;
+use fuzzy_matcher::skim::SkimMatcherV2;
 use serde::{Deserialize, Serialize};
 
 use crate::{engine::calculate_score, get_now_time};
@@ -60,7 +61,7 @@ impl Database {
     pub fn clear(&mut self) -> Result<()> {
         self.entries.clear();
 
-        let home = Self::get_home_dir().expect("Failed to get home directory");
+        let home = Self::get_home_dir().context("Failed to get database directory")?;
 
         if home.exists() {
             fs::remove_dir_all(home).context("Failed to clear database")?;
@@ -88,11 +89,13 @@ impl Database {
     }
 
     pub fn get_matching_entries(&self, keyword: &str) -> Vec<(String, f64)> {
+        let matcher = SkimMatcherV2::default();
+
         let mut matches: Vec<(String, f64)> = self
             .entries
             .iter()
             .filter_map(|(path, record)| {
-                calculate_score(path, record, keyword).map(|score| (path.clone(), score))
+                calculate_score(&matcher, path, record, keyword).map(|score| (path.clone(), score))
             })
             .collect();
 
