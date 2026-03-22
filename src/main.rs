@@ -13,6 +13,9 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    #[command(about = "Initialize the database for a specific shell")]
+    Init { shell: String },
+
     #[command(about = "Add or update a directory entry")]
     Add { path: String },
 
@@ -39,6 +42,20 @@ fn main() -> Result<()> {
     let mut db = Database::load()?;
 
     match &cli.command {
+        Commands::Init { shell } => {
+            let shell = shell.to_lowercase();
+
+            let init_script = match shell.as_str() {
+                "fish" => include_str!("scripts/init.fish"),
+                _ => {
+                    eprintln!("Unsupported shell: {}", shell);
+                    return Ok(());
+                }
+            };
+
+            println!("{}", init_script);
+        }
+
         Commands::Add { path } => {
             let abs_path = get_abs_path(path).context("Failed to get absolute path")?;
 
