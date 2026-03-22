@@ -47,6 +47,8 @@ fn main() -> Result<()> {
 
             let init_script = match shell.as_str() {
                 "fish" => include_str!("scripts/init.fish"),
+                "bash" => include_str!("scripts/init.bash"),
+                "zsh" => include_str!("scripts/init.zsh"),
                 _ => {
                     eprintln!("Unsupported shell: {}", shell);
                     return Ok(());
