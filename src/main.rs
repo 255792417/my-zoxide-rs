@@ -19,12 +19,12 @@ enum Commands {
     #[command(about = "Add or update a directory entry")]
     Add { path: String },
 
-    #[command(about = "Query for directories based on keywords")]
-    Query { keywords: Vec<String> },
+    #[command(about = "Query for directories based on a keyword")]
+    Query { keyword: String },
 
     #[command(about = "List all tracked directories")]
     List {
-        keywords: Vec<String>,
+        keyword: String,
         #[arg(short, long, default_value_t = false, help = "Show scores in the list")]
         score: bool,
     },
@@ -64,8 +64,8 @@ fn main() -> Result<()> {
             db.save()?;
         }
 
-        Commands::Query { keywords } => {
-            let matches: Vec<(String, f64)> = db.get_matching_entries(keywords);
+        Commands::Query { keyword } => {
+            let matches: Vec<(String, f64)> = db.get_matching_entries(keyword);
 
             if let Some((best_path, _)) = matches.first() {
                 println!("{}", best_path);
@@ -74,8 +74,8 @@ fn main() -> Result<()> {
             }
         }
 
-        Commands::List { keywords, score } => {
-            let matches: Vec<(String, f64)> = db.get_matching_entries(keywords);
+        Commands::List { keyword, score } => {
+            let matches: Vec<(String, f64)> = db.get_matching_entries(keyword);
 
             for (path, path_score) in matches {
                 if *score {

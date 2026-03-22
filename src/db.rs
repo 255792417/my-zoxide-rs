@@ -87,12 +87,12 @@ impl Database {
         self.entries.remove(path);
     }
 
-    pub fn get_matching_entries(&self, keywords: &[String]) -> Vec<(String, f64)> {
+    pub fn get_matching_entries(&self, keyword: &str) -> Vec<(String, f64)> {
         let mut matches: Vec<(String, f64)> = self
             .entries
             .iter()
             .filter_map(|(path, record)| {
-                calculate_score(path, record, keywords).map(|score| (path.clone(), score))
+                calculate_score(path, record, keyword).map(|score| (path.clone(), score))
             })
             .collect();
 
