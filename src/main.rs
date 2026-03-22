@@ -32,6 +32,9 @@ enum Commands {
     #[command(about = "Delete a directory entry")]
     Delete { path: String },
 
+    #[command(about = "Check the database for invalid entries")]
+    Check,
+
     #[command(about = "Clear all directory entries")]
     Clear,
 }
@@ -95,6 +98,10 @@ fn main() -> Result<()> {
 
         Commands::Clear => {
             engine.clear_db()?;
+        }
+
+        Commands::Check => {
+            engine.check_db_entries();
         }
     }
 

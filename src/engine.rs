@@ -6,6 +6,11 @@ use anyhow::{Result, anyhow};
 use fuzzy_matcher::{FuzzyMatcher, skim::SkimMatcherV2};
 use std::path;
 
+const RECORDS_LIMIT: usize = 1000;
+const RECORDS_PRUNE_THRESHOLD: usize = 2000;
+const DECAY_SUM_THRESHOLD: f64 = 10000.0;
+const DECAY_RATE: f64 = 0.9;
+
 pub struct Engine {
     db: Database,
 }
@@ -39,6 +44,59 @@ impl Engine {
         let time_elapsed_hours = time_elapsed_secs / 3600.0;
 
         record.score / (1.0 + time_elapsed_hours).sqrt()
+    }
+
+    pub fn check_db_entries(&mut self) {
+        let mut to_remove = Vec::new();
+
+        for (path_str, _) in &self.db.entries {
+            if !std::path::Path::new(path_str).exists() {
+                to_remove.push(path_str.clone());
+            }
+        }
+
+        for path in to_remove {
+            self.db.entries.remove(&path);
+        }
+    }
+
+    fn prune_db(&mut self) {
+        let mut entries: Vec<(String, DirRecord)> = self.db.entries.drain().collect();
+
+        entries.sort_by(|a, b| {
+            Self::frecency_score(&b.1)
+                .partial_cmp(&Self::frecency_score(&a.1))
+                .unwrap()
+        });
+
+        entries.truncate(RECORDS_LIMIT);
+
+        self.db.entries = entries.into_iter().collect();
+    }
+
+    fn decay_scores(&mut self) {
+        for record in self.db.entries.values_mut() {
+            record.score *= DECAY_RATE;
+        }
+    }
+
+    fn ensure_db_limits(&mut self) {
+        let entries_count = self.db.entries.len();
+
+        // len > 2 * limit -> check + prune
+        if entries_count > RECORDS_PRUNE_THRESHOLD {
+            self.check_db_entries();
+            self.prune_db();
+        }
+
+        // every 10 add -> decay
+        if entries_count % 10 == 0 {
+            let total_score: f64 = self.db.entries.values().map(|r| r.score).sum();
+
+            if total_score > DECAY_SUM_THRESHOLD {
+                self.decay_scores();
+            }
+        }
     }
 
     pub fn calculate_score(
@@ -76,6 +134,8 @@ impl Engine {
             },
         );
 
+        self.ensure_db_limits();
+
         Ok(())
     }
 
@@ -89,6 +149,8 @@ impl Engine {
 
         entry.score += 1.0;
         entry.last_accessed = now;
+
+        self.ensure_db_limits();
     }
 
     pub fn delete_entry(&mut self, path: &str) -> Result<()> {
