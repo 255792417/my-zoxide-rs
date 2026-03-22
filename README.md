@@ -19,7 +19,7 @@ A simple implementation of [zoxide](https://github.com/ajeetdsouza/zoxide)
     ```
     this will show a guide built with [clap](https://github.com/clap-rs/clap)
 
-4. Integrate with your shell
+4. Integrate with your shell  
     Add the init command for your shell to the corresponding shell config file.
 
     **Fish** (`~/.config/fish/config.fish` on Linux):

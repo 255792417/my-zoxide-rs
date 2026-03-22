@@ -1,11 +1,16 @@
 pub mod db;
 pub mod engine;
 
+use anyhow::Result;
 use std::fs;
-pub fn get_abs_path(path: &str) -> Option<String> {
+pub fn get_abs_path(path: &str) -> Result<String> {
     fs::canonicalize(path)
-        .ok()
-        .and_then(|p| p.to_str().map(|s| s.to_string()))
+        .map_err(|e| anyhow::anyhow!("Failed to get absolute path: {}", e))
+        .and_then(|p| {
+            p.into_os_string()
+                .into_string()
+                .map_err(|_| anyhow::anyhow!("Failed to convert path to string"))
+        })
 }
 
 use std::time::{SystemTime, UNIX_EPOCH};

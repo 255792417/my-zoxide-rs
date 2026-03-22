@@ -1,7 +1,7 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use clap::{Parser, Subcommand};
 
-use my_zoxide::{db::Database, get_abs_path};
+use my_zoxide::{engine::Engine, get_abs_path};
 
 #[derive(Parser)]
 #[command(name = "my-zoxide")]
@@ -39,7 +39,7 @@ enum Commands {
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    let mut db = Database::load()?;
+    let mut engine = Engine::new();
 
     match &cli.command {
         Commands::Init { shell } => {
@@ -59,25 +59,23 @@ fn main() -> Result<()> {
         }
 
         Commands::Add { path } => {
-            let abs_path = get_abs_path(path).context("Failed to get absolute path")?;
+            let abs_path = get_abs_path(path)?;
 
-            db.add_or_update_entry(abs_path.clone());
+            engine.add_or_update_entry(abs_path.clone());
 
-            db.save()?;
+            engine.save_db()?;
         }
 
         Commands::Query { keyword } => {
-            let matches: Vec<(String, f64)> = db.get_matching_entries(keyword);
+            let matches: Vec<(String, f64)> = engine.get_matching_entries(keyword)?;
 
-            if let Some((best_path, _)) = matches.first() {
-                println!("{}", best_path);
-            } else {
-                eprintln!("No matching directories found");
+            if let Some((best_match, _)) = matches.first() {
+                println!("{}", best_match);
             }
         }
 
         Commands::List { keyword, score } => {
-            let matches: Vec<(String, f64)> = db.get_matching_entries(keyword);
+            let matches: Vec<(String, f64)> = engine.get_matching_entries(keyword)?;
 
             for (path, path_score) in matches {
                 if *score {
@@ -89,14 +87,14 @@ fn main() -> Result<()> {
         }
 
         Commands::Delete { path } => {
-            let abs_path = get_abs_path(path).context("Failed to get absolute path")?;
+            let abs_path = get_abs_path(path)?;
 
-            db.delete_entry(&abs_path);
-            db.save()?;
+            engine.delete_entry(&abs_path)?;
+            engine.save_db()?;
         }
 
         Commands::Clear => {
-            db.clear()?;
+            engine.clear_db()?;
         }
     }
 

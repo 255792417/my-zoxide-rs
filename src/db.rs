@@ -4,10 +4,7 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use directories::ProjectDirs;
-use fuzzy_matcher::skim::SkimMatcherV2;
 use serde::{Deserialize, Serialize};
-
-use crate::{engine::calculate_score, get_now_time};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DirRecord {
@@ -68,38 +65,5 @@ impl Database {
         }
 
         Ok(())
-    }
-}
-
-impl Database {
-    pub fn add_or_update_entry(&mut self, path: String) {
-        let now = get_now_time();
-
-        let entry = self.entries.entry(path).or_insert(DirRecord {
-            score: 0.0,
-            last_accessed: now,
-        });
-
-        entry.score += 1.0;
-        entry.last_accessed = now;
-    }
-
-    pub fn delete_entry(&mut self, path: &str) {
-        self.entries.remove(path);
-    }
-
-    pub fn get_matching_entries(&self, keyword: &str) -> Vec<(String, f64)> {
-        let matcher = SkimMatcherV2::default();
-
-        let mut matches: Vec<(String, f64)> = self
-            .entries
-            .iter()
-            .filter_map(|(path, record)| {
-                calculate_score(&matcher, path, record, keyword).map(|score| (path.clone(), score))
-            })
-            .collect();
-
-        matches.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
-        matches
     }
 }
