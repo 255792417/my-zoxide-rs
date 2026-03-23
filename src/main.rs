@@ -20,11 +20,11 @@ enum Commands {
     Add { path: String },
 
     #[command(about = "Query for directories based on a keyword")]
-    Query { keyword: String },
+    Query { keyword: Option<String> },
 
     #[command(about = "List all tracked directories")]
     List {
-        keyword: String,
+        keyword: Option<String>,
         #[arg(short, long, default_value_t = false, help = "Show scores in the list")]
         score: bool,
     },
@@ -70,7 +70,8 @@ fn main() -> Result<()> {
         }
 
         Commands::Query { keyword } => {
-            let matches: Vec<(String, f64)> = engine.get_matching_entries(keyword)?;
+            let matches: Vec<(String, f64)> =
+                engine.get_matching_entries(keyword.as_deref().unwrap_or(""))?;
 
             if let Some((best_match, _)) = matches.first() {
                 println!("{}", best_match);
@@ -78,7 +79,8 @@ fn main() -> Result<()> {
         }
 
         Commands::List { keyword, score } => {
-            let matches: Vec<(String, f64)> = engine.get_matching_entries(keyword)?;
+            let matches: Vec<(String, f64)> =
+                engine.get_matching_entries(keyword.as_deref().unwrap_or(""))?;
 
             for (path, path_score) in matches {
                 if *score {
